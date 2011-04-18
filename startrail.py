@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 #
 # Gimp Startrail Compositor
-# Version : 1.0
+# http://code.google.com/p/gimp-startrail-compositor/
+# Version : 1.1
 #
 # Christopher Pearson
-# http://code.google.com/p/gimp-startrail-compositor/
+# www.cpearson.me.uk
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,16 +28,9 @@ import gettext
 locale_directory = gimp.locale_directory
 gettext.install( "gimp20-template" , locale_directory, unicode=True )
 
-def startrail(width, height, frames, dark_frames,ext):
-	#Do some santity checking before we start
-	if len(frames) == 0:
-		# print("No light frame path provided")
-		return
+allowedTypes = ["jpg","jpeg","tiff","tif","bmp","png"]
 
-	if not os.path.exists(frames):
-		# print("light frame path doesn't exist")
-		return
-
+def createStarterImage(width, height):
 	# Create a new image to work in.
 	image = gimp.Image(width, height, RGB)
 
@@ -55,30 +49,38 @@ def startrail(width, height, frames, dark_frames,ext):
 
 	# We're done messing with the background so flatten down.
 	image.flatten()
+	return (image)	
+	
+def processImage(fileName, image, layerMode):
+	ext = os.path.splitext(fileName)[1] # get the extension
+	ext = ext.replace(".", "") # rip off the . from the extension
+	if ext.lower() in allowedTypes: # is this an image?
+		newLayer = pdb.gimp_file_load_layer(image, fileName)
+		newLayer.mode = layerMode
+		image.add_layer(newLayer,0)
+		image.flatten()
+
+def startrail(width, height, frames, dark_frames):
+	#Do some santity checking before we start
+	if len(frames) == 0:
+		pdb.gimp_message("No light frame path provided.")
+		return
+
+	if not os.path.exists(frames):
+		pdb.gimp_message("Light frame path doesn't exist.")
+		return
+
+	# Create a new image to work in.
+	image = createStarterImage(width, height)
 
 	for fileName in os.listdir(frames):
-		if fileName.endswith(ext): 
-			file = os.path.join(frames, fileName)
-			# open the file as a new layer, then set the mode to lighten and then merge.
-			new_layer = pdb.gimp_file_load_layer(image, file)
-			new_layer.mode = 10 # lighten
-			image.add_layer(new_layer,0)
-			image.flatten()
-
+		processImage(os.path.join(frames, fileName), image, 10) # Lighten mode.
+	
 	# If there is a specified path and that path exists then process the dark frames.
 	if os.path.exists(dark_frames):
 		for fileName in os.listdir(dark_frames):
-			if fileName.endswith(ext): 
-				file = os.path.join(dark_frames, fileName)
-				# open the file as a new layer, then set the mode to difference and then merge.
-				new_layer = pdb.gimp_file_load_layer(image, file)
-				new_layer.mode = 6 # difference
-				image.add_layer(new_layer,0)
-				image.flatten()
-
-	# done so clean up
-	image.flatten()
-
+			processImage(os.path.join(dark_frames, fileName), image, 6) # Difference mode.
+			
 	# show the new image
 	gimp.Display(image)
 
@@ -95,8 +97,7 @@ register(
 		(PF_INT, "width", "Width",3008),
 		(PF_INT, "height", "Height",2000),
 		(PF_DIRNAME, "frames","Light Frames",""),
-		(PF_DIRNAME, "dark_frames","Dark Frames",""),
-		(PF_STRING, "ext", "File extension (case sensitive)", "jpg" )
+		(PF_DIRNAME, "dark_frames","Dark Frames","")
 	],
 	[],
 	startrail,
