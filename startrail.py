@@ -51,7 +51,7 @@ def processDarkFrame(fileName, image, layerCount):
 	# get the main layer of the new frame
 	darkLayer = pdb.gimp_layer_new_from_drawable(darkFrame.active_layer, image)
 	# set the opacity to half that of the one before so we get an average
-	darkLayer.opacity = 100.0 / layerCount
+	darkLayer.opacity = 100.0 / pow(2, layerCount - 1)
 	# add the new layer and flatten down to keep memory useage down.
 	image.add_layer(darkLayer,0)
 	image.flatten()
