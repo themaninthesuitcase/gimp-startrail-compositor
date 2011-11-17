@@ -71,7 +71,7 @@ def createDarkImage(darkFrames):
 	
 	return darkImage
 
-def processLightFrame(fileName, image, darkImage):
+def processLightFrame(fileName, image, darkImage, saveIntermediate, imageCount, saveDir):
 	# load up the light frame into an image
 	lightFrame = pdb.gimp_file_load(fileName,"")
 	
@@ -99,11 +99,17 @@ def processLightFrame(fileName, image, darkImage):
 	image.add_layer(lightLayer,0)
 	image.flatten()
 	
+	# are we saveing the intermediate frames?
+	if saveIntermediate == 1:
+		# build a save filename pad the number to 5 digits which should be plenty for any timelapse.
+		intFileName = os.path.join(saveDir, "trail" + str(imageCount).zfill(5) + ".jpg")
+		pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intFileName,intFileName)
+	
 	# clean up our temp bits.
 	gimp.delete(lightFrame)
 	return(image)
 
-def startrail(frames, darkFrames):
+def startrail(frames, use_dark_frames, darkFrames, save_intermediate, save_directory):
 	#Do some santity checking before we start
 	if len(frames) == 0:
 		pdb.gimp_message("No light frame path provided.")
@@ -114,7 +120,11 @@ def startrail(frames, darkFrames):
 		return
 
 	# create our dark frame averaged from all of them
-	darkImage = createDarkImage(darkFrames)
+	darkImage = None
+	if use_dark_frames == 1:
+		darkImage = createDarkImage(darkFrames)
+	
+	imageCount = 0
 	
 	# Define an image to work in.
 	# This will be created from the first light frame we process
@@ -122,7 +132,8 @@ def startrail(frames, darkFrames):
 	for fileName in os.listdir(frames):
 		fileName = os.path.join(frames, fileName)
 		if fileIsImage(fileName):
-			image = processLightFrame(fileName, image, darkImage)
+			imageCount += 1
+			image = processLightFrame(fileName, image, darkImage, save_intermediate, imageCount, save_directory)
 	
 	# show the new image if we managed to make one.
 	if image == None:
@@ -142,7 +153,10 @@ register(
 	"",
 	[
 		(PF_DIRNAME, "frames","Light Frames",""),
-		(PF_DIRNAME, "dark_frames","Dark Frames","")
+		(PF_TOGGLE, "use_dark_frames","Use dark frame",1),
+		(PF_DIRNAME, "dark_frames","Dark Frames",""),
+		(PF_TOGGLE, "save_intermediate","Save intermediate frames",0),
+		(PF_DIRNAME, "save_directory","Intermediate save directory","")
 	],
 	[],
 	startrail,
