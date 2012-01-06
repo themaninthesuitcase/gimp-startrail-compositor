@@ -115,29 +115,29 @@ def startrail(frames, use_dark_frames, darkFrames, save_intermediate, save_direc
 	if len(frames) == 0:
 		pdb.gimp_message("No light frame path provided.")
 		return
-		
+
 	if not os.path.exists(frames):
 		pdb.gimp_message("Light frame path doesn't exist.")
 		return
-	
+
 	# Dark frames
 	if use_dark_frames == 1 and not os.path.exists(darkFrames):
 		pdb.gimp_message("Intermediate frame save path doesn't exist.")
 		return
-	
+
 	# Intermediate frame path
 	if save_intermediate == 1 and not os.path.exists(save_directory):
 		pdb.gimp_message("Intermediate frame save path doesn't exist.")
 		return
-		
+
 	# create 1 dark frame averaged from all of them
 	darkImage = None
 	if use_dark_frames == 1:
 		darkImage = createDarkImage(darkFrames)
-	
+
 	# Create a counter to count the frames we layer
 	imageCount = 0
-	
+
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
@@ -146,7 +146,7 @@ def startrail(frames, use_dark_frames, darkFrames, save_intermediate, save_direc
 		if fileIsImage(fileName):
 			imageCount += 1
 			image = processLightFrame(fileName, image, darkImage, save_intermediate, imageCount, save_directory)
-	
+
 	# show the new image if we managed to make one.
 	if image == None:
 		pdb.gimp_message("No images found to stack")
