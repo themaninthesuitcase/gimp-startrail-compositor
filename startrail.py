@@ -3,7 +3,7 @@
 #
 # Gimp Startrail Compositor
 # http://code.google.com/p/gimp-startrail-compositor/
-# Version : 1.2
+# Version : 1.3
 #
 # Christopher Pearson
 # www.cpearson.me.uk
