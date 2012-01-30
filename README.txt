@@ -1,3 +1,9 @@
+1.4
+===============
+Fixed issue #4 - Intermediate save path is not checked for existance
+Fixed issue #5 - Refactor of base code
+Various minor tweaks
+
 1.3
 ===============
 Added new option to save the intermediate frames after each layer is added.
