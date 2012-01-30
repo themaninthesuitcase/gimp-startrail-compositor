@@ -28,88 +28,88 @@ import gettext
 locale_directory = gimp.locale_directory
 gettext.install( "gimp20-template" , locale_directory, unicode=True )
 
-allowedTypes = ["jpg","jpeg","tiff","tif","bmp","png"]
-LIGHTEN = 10
-DIFFERENCE = 6
+allowed_import_types = ["jpg","jpeg","tiff","tif","bmp","png"]
+layer_mode_lighten = 10
+layer_mode_difference = 6
 
-def fileIsImage(fileName):
-	isImage = 0
-	ext = os.path.splitext(fileName)[1] # get the extension
+def file_is_image(file_name):
+	is_image = 0
+	ext = os.path.splitext(file_name)[1] # get the extension
 	ext = ext.replace(".", "") # rip off the . from the extension
-	if ext.lower() in allowedTypes: # is this an image?
-		isImage = 1
-	return(isImage)
-		
-def processDarkFrame(fileName, image, layerCount):
-	darkFrame = pdb.gimp_file_load(fileName,"")
-	
+	if ext.lower() in allowed_import_types: # is this an image?
+		is_image = 1
+	return(is_image)
+
+def process_dark_frame(file_name, image, layer_count):
+	dark_frame = pdb.gimp_file_load(file_name,"")
+
 	# have we got a base image to work with?
 	if image == None:
 		# create a base image based on the dark frame
-		image = pdb.gimp_image_new(darkFrame.active_layer.width, darkFrame.active_layer.height, 0)
-		
+		image = pdb.gimp_image_new(dark_frame.active_layer.width, dark_frame.active_layer.height, 0)
+
 	# get the main layer of the new frame
-	darkLayer = pdb.gimp_layer_new_from_drawable(darkFrame.active_layer, image)
+	dark_layer = pdb.gimp_layer_new_from_drawable(dark_frame.active_layer, image)
 	# set the opacity to half that of the one before so we get an average
-	darkLayer.opacity = 100.0 / pow(2, layerCount - 1)
+	dark_layer.opacity = 100.0 / pow(2, layer_count - 1)
 	# add the new layer and flatten down to keep memory useage down.
-	image.add_layer(darkLayer,0)
+	image.add_layer(dark_layer,0)
 	image.flatten()
 	# Get rid of the image we loaded up.
-	gimp.delete(darkFrame)
+	gimp.delete(dark_frame)
 	return(image)
 
-def createDarkImage(darkFrames):
-	darkImage = None	
-	layerCount = 1
-	
-	for fileName in os.listdir(darkFrames):
-		fileName = os.path.join(darkFrames, fileName)
-		if fileIsImage(fileName):
-			darkImage = processDarkFrame(fileName, darkImage, layerCount)
-			layerCount += 1
-	
-	return darkImage
+def create_dark_image(dark_frames):
+	dark_image = None
+	layer_count = 1
 
-def processLightFrame(fileName, image, darkImage, saveIntermediate, imageCount, saveDir):
+	for file_name in os.listdir(dark_frames):
+		file_name = os.path.join(dark_frames, file_name)
+		if file_is_image(file_name):
+			dark_image = process_dark_frame(file_name, dark_image, layer_count)
+			layer_count += 1
+
+	return dark_image
+
+def process_light_frame(file_name, image, dark_image, save_intermediate, image_count, save_directory):
 	# load up the light frame into an image
-	lightFrame = pdb.gimp_file_load(fileName,"")
-	
+	light_frame = pdb.gimp_file_load(file_name,"")
+
 	# have we got a base image to work with?
 	if image == None:
 		# create a base image based on the light frame
-		image = pdb.gimp_image_new(lightFrame.active_layer.width, lightFrame.active_layer.height, 0)			
+		image = pdb.gimp_image_new(light_frame.active_layer.width, light_frame.active_layer.height, 0)
 
 	# did we make a dark frame?
-	if darkImage != None:
-		# As we have a dark image we need to difference it against the light frame.
+	if dark_image != None:
+		# As we have a dark image we need to layer_mode_difference it against the light frame.
 		# create a new layer from the dark image
-		darkLayer = pdb.gimp_layer_new_from_drawable(darkImage.active_layer, lightFrame)
-		# set the layer to difference
-		darkLayer.mode = DIFFERENCE
-		# add the layer to the lightFrame
-		lightFrame.add_layer(darkLayer, 0)
+		dark_layer = pdb.gimp_layer_new_from_drawable(dark_image.active_layer, light_frame)
+		# set the layer to layer_mode_difference
+		dark_layer.mode = layer_mode_difference
+		# add the layer to the light_frame
+		light_frame.add_layer(dark_layer, 0)
 		# flatten
-		lightFrame.flatten()
-				
-	# Set the light frame to lighten 
-	lightLayer = pdb.gimp_layer_new_from_drawable (lightFrame.active_layer, image)
-	lightLayer.mode = LIGHTEN
+		light_frame.flatten()
+
+	# Set the light frame to layer_mode_lighten
+	light_layer = pdb.gimp_layer_new_from_drawable (light_frame.active_layer, image)
+	light_layer.mode = layer_mode_lighten
 	# add this as new layer
-	image.add_layer(lightLayer,0)
+	image.add_layer(light_layer,0)
 	image.flatten()
-	
+
 	# are we saveing the intermediate frames?
-	if saveIntermediate == 1:
-		# build a save filename pad the number to 5 digits which should be plenty for any timelapse.
-		intFileName = os.path.join(saveDir, "trail" + str(imageCount).zfill(5) + ".jpg")
-		pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intFileName,intFileName)
-	
+	if save_intermediate == 1:
+		# build a save file_name pad the number to 5 digits which should be plenty for any timelapse.
+		intermediate_save_file_name = os.path.join(save_directory, "trail" + str(image_count).zfill(5) + ".jpg")
+		pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
+
 	# clean up our temp bits.
-	gimp.delete(lightFrame)
+	gimp.delete(light_frame)
 	return(image)
 
-def startrail(frames, use_dark_frames, darkFrames, save_intermediate, save_directory):
+def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory):
 	#Do some santity checking before we start
 	# Light frames
 	if len(frames) == 0:
@@ -121,7 +121,7 @@ def startrail(frames, use_dark_frames, darkFrames, save_intermediate, save_direc
 		return
 
 	# Dark frames
-	if use_dark_frames == 1 and not os.path.exists(darkFrames):
+	if use_dark_frames == 1 and not os.path.exists(dark_frames):
 		pdb.gimp_message("Intermediate frame save path doesn't exist.")
 		return
 
@@ -131,28 +131,28 @@ def startrail(frames, use_dark_frames, darkFrames, save_intermediate, save_direc
 		return
 
 	# create 1 dark frame averaged from all of them
-	darkImage = None
+	dark_image = None
 	if use_dark_frames == 1:
-		darkImage = createDarkImage(darkFrames)
+		dark_image = create_dark_image(dark_frames)
 
 	# Create a counter to count the frames we layer
-	imageCount = 0
+	image_count = 0
 
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
-	for fileName in os.listdir(frames):
-		fileName = os.path.join(frames, fileName)
-		if fileIsImage(fileName):
-			imageCount += 1
-			image = processLightFrame(fileName, image, darkImage, save_intermediate, imageCount, save_directory)
+	for file_name in os.listdir(frames):
+		file_name = os.path.join(frames, file_name)
+		if file_is_image(file_name):
+			image_count += 1
+			image = process_light_frame(file_name, image, dark_image, save_intermediate, image_count, save_directory)
 
 	# show the new image if we managed to make one.
 	if image == None:
 		pdb.gimp_message("No images found to stack")
 	else:
 		gimp.Display(image)
-		gimp.delete(darkImage) # we don't need this any more so get rid of it so not to leak.
+		gimp.delete(dark_image) # we don't need this any more so get rid of it so not to leak.
 
 register(
 	"startrail",
@@ -172,8 +172,8 @@ register(
 	],
 	[],
 	startrail,
-	menu="<Image>/File/Create/Python-Fu",   
-	domain=("gimp20-template", locale_directory) 
+	menu="<Image>/File/Create/Python-Fu",
+	domain=("gimp20-template", locale_directory)
 	)
 
 main()
