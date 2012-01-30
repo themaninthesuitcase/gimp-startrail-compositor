@@ -71,7 +71,7 @@ def create_dark_image(dark_frames):
 
 	return dark_image
 
-def process_light_frame(file_name, image, dark_image, save_intermediate, image_count, save_directory):
+def process_light_frame(file_name, image, dark_image, image_count, save_intermediate, save_directory):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
@@ -145,7 +145,7 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		file_name = os.path.join(frames, file_name)
 		if file_is_image(file_name):
 			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, save_intermediate, image_count, save_directory)
+			image = process_light_frame(file_name, image, dark_image, image_count, save_intermediate, save_directory)
 
 	# show the new image if we managed to make one.
 	if image == None:
