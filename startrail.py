@@ -40,13 +40,16 @@ def file_is_image(file_name):
 		is_image = 1
 	return(is_image)
 
+def get_new_image(raw_image):
+	return pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
+
 def process_dark_frame(file_name, image, layer_count):
 	dark_frame = pdb.gimp_file_load(file_name,"")
 
 	# have we got a base image to work with?
 	if image == None:
 		# create a base image based on the dark frame
-		image = pdb.gimp_image_new(dark_frame.active_layer.width, dark_frame.active_layer.height, 0)
+		image = get_new_image(dark_frame)
 
 	# get the main layer of the new frame
 	dark_layer = pdb.gimp_layer_new_from_drawable(dark_frame.active_layer, image)
@@ -78,7 +81,7 @@ def process_light_frame(file_name, image, dark_image, image_count, save_intermed
 	# have we got a base image to work with?
 	if image == None:
 		# create a base image based on the light frame
-		image = pdb.gimp_image_new(light_frame.active_layer.width, light_frame.active_layer.height, 0)
+		image = get_new_image(light_frame)
 
 	# did we make a dark frame?
 	if dark_image != None:
@@ -122,7 +125,7 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 
 	# Dark frames
 	if use_dark_frames == 1 and not os.path.exists(dark_frames):
-		pdb.gimp_message("Intermediate frame save path doesn't exist.")
+		pdb.gimp_message("Dark frame save path doesn't exist.")
 		return
 
 	# Intermediate frame path
@@ -152,7 +155,8 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		pdb.gimp_message("No images found to stack")
 	else:
 		gimp.Display(image)
-		gimp.delete(dark_image) # we don't need this any more so get rid of it so not to leak.
+		if dark_image != None:
+			gimp.delete(dark_image) # we don't need this any more so get rid of it so not to leak.
 
 register(
 	"startrail",
