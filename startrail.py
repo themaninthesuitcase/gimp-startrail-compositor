@@ -3,7 +3,7 @@
 #
 # Gimp Startrail Compositor
 # http://code.google.com/p/gimp-startrail-compositor/
-# Version : 1.4
+# Version : 1.5
 #
 # Christopher Pearson
 # www.cpearson.me.uk
@@ -29,8 +29,6 @@ locale_directory = gimp.locale_directory
 gettext.install( "gimp20-template" , locale_directory, unicode=True )
 
 allowed_import_types = ["jpg","jpeg","tiff","tif","bmp","png"]
-layer_mode_lighten = 10
-layer_mode_difference = 6
 
 def file_is_image(file_name):
 	is_image = 0
@@ -53,8 +51,9 @@ def process_dark_frame(file_name, image, layer_count):
 
 	# get the main layer of the new frame
 	dark_layer = pdb.gimp_layer_new_from_drawable(dark_frame.active_layer, image)
-	# set the opacity to half that of the one before so we get an average
-	dark_layer.opacity = 100.0 / pow(2, layer_count - 1)
+	# set the opacity to create an average image:
+	# formula taken from http://www.cambridgeincolour.com/tutorials/image-averaging-noise.htm
+	dark_layer.opacity = 100.0 / layer_count
 	# add the new layer and flatten down to keep memory useage down.
 	image.add_layer(dark_layer,0)
 	image.flatten()
@@ -85,11 +84,11 @@ def process_light_frame(file_name, image, dark_image, image_count, save_intermed
 
 	# did we make a dark frame?
 	if dark_image != None:
-		# As we have a dark image we need to layer_mode_difference it against the light frame.
+		# As we have a dark image we need to subtract it from the light frame.
 		# create a new layer from the dark image
 		dark_layer = pdb.gimp_layer_new_from_drawable(dark_image.active_layer, light_frame)
 		# set the layer to layer_mode_difference
-		dark_layer.mode = layer_mode_difference
+		dark_layer.mode = SUBTRACT_MODE
 		# add the layer to the light_frame
 		light_frame.add_layer(dark_layer, 0)
 		# flatten
@@ -97,7 +96,7 @@ def process_light_frame(file_name, image, dark_image, image_count, save_intermed
 
 	# Set the light frame to layer_mode_lighten
 	light_layer = pdb.gimp_layer_new_from_drawable (light_frame.active_layer, image)
-	light_layer.mode = layer_mode_lighten
+	light_layer.mode = LIGHTEN_ONLY_MODE
 	# add this as new layer
 	image.add_layer(light_layer,0)
 	image.flatten()
