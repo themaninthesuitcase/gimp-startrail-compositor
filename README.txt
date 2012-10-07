@@ -1,6 +1,9 @@
 gimp-startrail-compositor is a plugin for GIMP which automates the stacking of startrail images, producing either 1 or a set of stacked images.
 
 Install instructions and usage can be found at http://code.google.com/p/gimp-startrail-compositor/
+1.5
+===============
+Corrected issue with dark frame handling.
 
 1.4
 ===============
