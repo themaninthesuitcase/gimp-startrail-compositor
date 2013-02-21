@@ -111,7 +111,7 @@ def process_light_frame(file_name, image, dark_image):
 	gimp.delete(light_frame)
 	return(image)
 
-def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory):
+def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display):
 	#Do some santity checking before we start
 	# Light frames
 	if len(frames) == 0:
@@ -153,6 +153,13 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 			image = process_light_frame(file_name, image, dark_image)
 			if save_intermediate == 1:
 				save_intermediate_frame(image, image_count, save_directory)
+		
+			if live_display == 1:		
+				# If first frame display the image to screen.
+				if image_count == 1:
+					gimp.Display(image)
+				# Update the display
+				gimp.displays_flush()
 
 	# end the timer
 	elapsed = time() - start
@@ -162,7 +169,10 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		pdb.gimp_message("No images found to stack")
 	
 	if image != None:
-		gimp.Display(image)
+		if live_display == 1 :
+			gimp.displays_flush()
+		else: 
+			gimp.Display(image)
 		pdb.gimp_message("Image created in " + str(round(elapsed)).rstrip('0').rstrip('.') + "s")
 		
 	if dark_image != None:
@@ -182,7 +192,8 @@ register(
 		(PF_TOGGLE, "use_dark_frames","Use dark frame",1),
 		(PF_DIRNAME, "dark_frames","Dark Frames",""),
 		(PF_TOGGLE, "save_intermediate","Save intermediate frames",0),
-		(PF_DIRNAME, "save_directory","Intermediate save directory","")
+		(PF_DIRNAME, "save_directory","Intermediate save directory",""),
+		(PF_TOGGLE, "live_display","Live display update (MUCH slower)",0)
 	],
 	[],
 	startrail,
