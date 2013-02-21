@@ -73,8 +73,13 @@ def create_dark_image(dark_frames):
 			layer_count += 1
 
 	return dark_image
+	
+def save_intermediate_frame(image, image_count, directory):
+	# build a save file_name pad the number to 5 digits which should be plenty for any timelapse.
+	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
+	pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
 
-def process_light_frame(file_name, image, dark_image, image_count, save_intermediate, save_directory):
+def process_light_frame(file_name, image, dark_image):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
@@ -100,13 +105,7 @@ def process_light_frame(file_name, image, dark_image, image_count, save_intermed
 	light_layer.mode = LIGHTEN_ONLY_MODE
 	# add this as new layer
 	image.add_layer(light_layer,0)
-	image.flatten()
-
-	# are we saveing the intermediate frames?
-	if save_intermediate == 1:
-		# build a save file_name pad the number to 5 digits which should be plenty for any timelapse.
-		intermediate_save_file_name = os.path.join(save_directory, "trail" + str(image_count).zfill(5) + ".jpg")
-		pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
+	image.flatten()		
 
 	# clean up our temp bits.
 	gimp.delete(light_frame)
@@ -151,7 +150,9 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		file_name = os.path.join(frames, file_name)
 		if file_is_image(file_name):
 			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, image_count, save_intermediate, save_directory)
+			image = process_light_frame(file_name, image, dark_image)
+			if save_intermediate == 1:
+				save_intermediate_frame(image, image_count, save_directory)
 
 	# end the timer
 	elapsed = time() - start
