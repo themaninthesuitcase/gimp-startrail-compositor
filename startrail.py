@@ -79,7 +79,7 @@ def save_intermediate_frame(image, image_count, directory):
 	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
 	pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
 
-def process_light_frame(file_name, image, dark_image):
+def process_light_frame(file_name, image, dark_image, merge_layers):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
@@ -105,13 +105,14 @@ def process_light_frame(file_name, image, dark_image):
 	light_layer.mode = LIGHTEN_ONLY_MODE
 	# add this as new layer
 	image.add_layer(light_layer,0)
-	image.flatten()		
+	if merge_layers == 1:
+		image.flatten()		
 
 	# clean up our temp bits.
 	gimp.delete(light_frame)
 	return(image)
 
-def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display):
+def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers):
 	#Do some santity checking before we start
 	# Light frames
 	if len(frames) == 0:
@@ -150,7 +151,7 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		file_name = os.path.join(frames, file_name)
 		if file_is_image(file_name):
 			image_count += 1
-			image = process_light_frame(file_name, image, dark_image)
+			image = process_light_frame(file_name, image, dark_image, merge_layers)
 			if save_intermediate == 1:
 				save_intermediate_frame(image, image_count, save_directory)
 		
@@ -193,7 +194,8 @@ register(
 		(PF_DIRNAME, "dark_frames","Dark Frames",""),
 		(PF_TOGGLE, "save_intermediate","Save intermediate frames",0),
 		(PF_DIRNAME, "save_directory","Intermediate save directory",""),
-		(PF_TOGGLE, "live_display","Live display update (MUCH slower)",0)
+		(PF_TOGGLE, "live_display","Live display update (MUCH slower)",0),
+		(PF_TOGGLE, "merge_layers","Merge all images to a single layer",1)
 	],
 	[],
 	startrail,
