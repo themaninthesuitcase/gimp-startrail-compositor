@@ -79,7 +79,7 @@ def save_intermediate_frame(image, image_count, directory):
 	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
 	pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
 
-def process_light_frame(file_name, image, dark_image, merge_layers):
+def process_light_frame(file_name, image, dark_image, merge_layers, image_count):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
@@ -101,16 +101,20 @@ def process_light_frame(file_name, image, dark_image, merge_layers):
 		light_frame.flatten()
 
 	# Set the light frame to layer_mode_lighten
-	light_layer = pdb.gimp_layer_new_from_drawable (light_frame.active_layer, image)
+	light_layer = pdb.gimp_layer_new_from_drawable(light_frame.active_layer, image)
 	light_layer.mode = LIGHTEN_ONLY_MODE
+	
 	# add this as new layer
 	image.add_layer(light_layer,0)
+
 	if merge_layers == 1:
-		image.flatten()		
+		image.flatten()
+	else:
+		light_layer.name = "layer " + str(image_count).zfill(5)		
 
 	# clean up our temp bits.
 	gimp.delete(light_frame)
-	return(image)
+	return(image)	
 
 def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers):
 	#Do some santity checking before we start
@@ -149,9 +153,10 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	image = None
 	for file_name in os.listdir(frames):
 		file_name = os.path.join(frames, file_name)
+
 		if file_is_image(file_name):
 			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, merge_layers)
+			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count)
 			if save_intermediate == 1:
 				save_intermediate_frame(image, image_count, save_directory)
 		
@@ -190,11 +195,11 @@ register(
 	"",
 	[
 		(PF_DIRNAME, "frames","Light Frames",""),
-		(PF_TOGGLE, "use_dark_frames","Use dark frame",1),
+		(PF_TOGGLE, "use_dark_frames","Use dark frame",0),
 		(PF_DIRNAME, "dark_frames","Dark Frames",""),
 		(PF_TOGGLE, "save_intermediate","Save intermediate frames",0),
 		(PF_DIRNAME, "save_directory","Intermediate save directory",""),
-		(PF_TOGGLE, "live_display","Live display update (MUCH slower)",0),
+		(PF_TOGGLE, "live_display","Live display update (much slower)",0),
 		(PF_TOGGLE, "merge_layers","Merge all images to a single layer",1)
 	],
 	[],
