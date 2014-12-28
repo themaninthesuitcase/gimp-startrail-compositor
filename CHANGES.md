@@ -1,4 +1,5 @@
-
+##1.7
+* Updated documentation to be more clear.
 ##1.6
 * New feature: User can opt to have progress displayed to screen at the expense of a slower processing speed.
 * New feature: Once process is complete the user is notified of how long this took in seconds. Note: On occasions this prompt appears behind the main GIMP window, this appears to be a GIMP bug as it only occurs in 2.8, works as expecting in 2.9 development build of GIMP.

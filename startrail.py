@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 # Gimp Startrail Compositor
-# http://code.google.com/p/gimp-startrail-compositor/
-# Version : 1.6
+# https://github.com/themaninthesuitcase/gimp-startrail-compositor
+# Version : 1.7
 #
 # Christopher Pearson
 # www.cpearson.me.uk
@@ -73,7 +73,7 @@ def create_dark_image(dark_frames):
 			layer_count += 1
 
 	return dark_image
-	
+
 def save_intermediate_frame(image, image_count, directory):
 	# build a save file_name pad the number to 5 digits which should be plenty for any timelapse.
 	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
@@ -103,18 +103,18 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count)
 	# Set the light frame to layer_mode_lighten
 	light_layer = pdb.gimp_layer_new_from_drawable(light_frame.active_layer, image)
 	light_layer.mode = LIGHTEN_ONLY_MODE
-	
+
 	# add this as new layer
 	image.add_layer(light_layer,0)
 
 	if merge_layers == 1:
 		image.flatten()
 	else:
-		light_layer.name = "layer " + str(image_count).zfill(5)		
+		light_layer.name = "layer " + str(image_count).zfill(5)
 
 	# clean up our temp bits.
 	gimp.delete(light_frame)
-	return(image)	
+	return(image)
 
 def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers):
 	#Do some santity checking before we start
@@ -136,7 +136,7 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	if save_intermediate == 1 and not os.path.exists(save_directory):
 		pdb.gimp_message("Intermediate frame save path doesn't exist.")
 		return
-	
+
 	# start a timer
 	start = time()
 
@@ -159,8 +159,8 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count)
 			if save_intermediate == 1:
 				save_intermediate_frame(image, image_count, save_directory)
-		
-			if live_display == 1:		
+
+			if live_display == 1:
 				# If first frame display the image to screen.
 				if image_count == 1:
 					gimp.Display(image)
@@ -173,14 +173,14 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	# show the new image if we managed to make one.
 	if image == None:
 		pdb.gimp_message("No images found to stack")
-	
+
 	if image != None:
 		if live_display == 1 :
 			gimp.displays_flush()
-		else: 
+		else:
 			gimp.Display(image)
 		pdb.gimp_message("Image created in " + str(round(elapsed)).rstrip('0').rstrip('.') + "s")
-		
+
 	if dark_image != None:
 		gimp.delete(dark_image) # we don't need this any more so get rid of it so not to leak.
 
