@@ -1,10 +1,12 @@
 **gimp-startrail-compositor** is a plugin for GIMP which automates the stacking of startrail images, producing either 1 or a set of stacked images.
+
 # Installing the plugin
-This plugin requires Python for it to work. On Linux and OSX this will be preinstalled but for Windows you will need to install this separately.
 
-To install the plugin you can either place them in the default locations, or my preference, by adding a plugin folder in my home directory to the plugins.
+This plugin requires Python to work. On Linux and OSX this will be preinstalled but for Windows you will need to [install this separately](https://www.python.org/downloads/).
 
-This can be done by going to Preferences :arrow_right: Folders :arrow_right: Plug-Ins.  Here you can add a new folder by clicking the new buton (:page_facing_up:) and then navigating to the folder.  You will also be able to see the default locations used on this dialog.
+To install the plugin, copy the file `startrail.py` into a plugin folder of your choice. You can either place it in the default locations (see [below](#default-plugin-folders)), or my preference, by adding a plugin folder in my home directory to the plugins.
+
+This last option can be done by going to Preferences :arrow_right: Folders :arrow_right: Plug-Ins.  Here you can add a new folder by clicking the new buton (:page_facing_up:) and then navigating to the folder.  <a id="default-plugin-folders"/>You will also be able to see the default locations used on this dialog.
 
 Once done reload GIMP to have the changes take effect.
 
@@ -28,7 +30,7 @@ Once loaded you will be given 7 options to set:
 Currently the plug-in will look for files with the following file extensions:
 jpg, jpeg, tiff, tif, bmp and png.
 
-Once all your options are set click ok and wait for the plug-in to do it's work.
+Once all your options are set click ok and wait for the plug-in to do its work.
 
 Once done you will get a new image made from your source images, though this is not saved yet unless you enabled _Save intermediate frames_ where it will be the last frame saved.
 
