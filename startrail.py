@@ -66,7 +66,9 @@ def create_dark_image(dark_frames):
 	dark_image = None
 	layer_count = 1
 
-	for file_name in os.listdir(dark_frames):
+	images = os.listdir(dark_frames)
+	images.sort()
+	for file_name in images:
 		file_name = os.path.join(dark_frames, file_name)
 		if file_is_image(file_name):
 			dark_image = process_dark_frame(file_name, dark_image, layer_count)
@@ -151,7 +153,9 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
-	for file_name in os.listdir(frames):
+	images = os.listdir(frames)
+	images.sort()
+	for file_name in images:
 		file_name = os.path.join(frames, file_name)
 
 		if file_is_image(file_name):
