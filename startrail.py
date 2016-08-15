@@ -40,7 +40,11 @@ def file_is_image(file_name):
 	return(is_image)
 
 def get_new_image(raw_image):
-	return pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
+        if hasattr(gimp.Image, "precision"):
+	        return pdb.gimp_image_new_with_precision(raw_image.active_layer.width, raw_image.active_layer.height, 0,
+						         raw_image.precision)
+        else:
+	        return pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
 
 def process_dark_frame(file_name, image, layer_count):
 	dark_frame = pdb.gimp_file_load(file_name,"")
