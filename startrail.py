@@ -208,7 +208,7 @@ register(
 	],
 	[],
 	startrail,
-	menu="<Image>/File/Create/Python-Fu",
+	menu="<Image>/File/Create",
 	domain=("gimp20-template", locale_directory)
 	)
 
