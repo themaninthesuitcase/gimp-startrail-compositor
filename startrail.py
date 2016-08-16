@@ -3,7 +3,7 @@
 #
 # Gimp Startrail Compositor
 # https://github.com/themaninthesuitcase/gimp-startrail-compositor
-# Version : 1.7
+# Version : 1.8
 #
 # Christopher Pearson
 # www.cpearson.me.uk

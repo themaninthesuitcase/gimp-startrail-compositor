@@ -1,3 +1,5 @@
+##1.8
+* Add Skyglow removal option.
 ##1.7
 * Updated documentation to be more clear.
 ##1.6
