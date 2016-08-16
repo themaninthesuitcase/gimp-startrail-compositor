@@ -40,7 +40,11 @@ def file_is_image(file_name):
 	return(is_image)
 
 def get_new_image(raw_image):
-	return pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
+        if hasattr(gimp.Image, "precision"):
+	        return pdb.gimp_image_new_with_precision(raw_image.active_layer.width, raw_image.active_layer.height, 0,
+						         raw_image.precision)
+        else:
+	        return pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
 
 def process_dark_frame(file_name, image, layer_count):
 	dark_frame = pdb.gimp_file_load(file_name,"")
@@ -66,7 +70,9 @@ def create_dark_image(dark_frames):
 	dark_image = None
 	layer_count = 1
 
-	for file_name in os.listdir(dark_frames):
+	images = os.listdir(dark_frames)
+	images.sort()
+	for file_name in images:
 		file_name = os.path.join(dark_frames, file_name)
 		if file_is_image(file_name):
 			dark_image = process_dark_frame(file_name, dark_image, layer_count)
@@ -79,7 +85,7 @@ def save_intermediate_frame(image, image_count, directory):
 	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
 	pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
 
-def process_light_frame(file_name, image, dark_image, merge_layers, image_count):
+def process_light_frame(file_name, image, dark_image, merge_layers, image_count, subtract_skyglow):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
@@ -100,6 +106,14 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count)
 		# flatten
 		light_frame.flatten()
 
+	if subtract_skyglow:
+		glow_layer = pdb.gimp_layer_new_from_drawable (light_frame.active_layer, light_frame)
+		glow_layer.mode = SUBTRACT_MODE
+		# add this as new layer
+		light_frame.add_layer(glow_layer,0)
+		pdb.plug_in_gauss(light_frame, glow_layer, 150, 150, 0)
+		light_frame.flatten()
+
 	# Set the light frame to layer_mode_lighten
 	light_layer = pdb.gimp_layer_new_from_drawable(light_frame.active_layer, image)
 	light_layer.mode = LIGHTEN_ONLY_MODE
@@ -116,7 +130,7 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count)
 	gimp.delete(light_frame)
 	return(image)
 
-def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers):
+def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers, subtract_skyglow):
 	#Do some santity checking before we start
 	# Light frames
 	if len(frames) == 0:
@@ -151,12 +165,14 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
-	for file_name in os.listdir(frames):
+	images = os.listdir(frames)
+	images.sort()
+	for file_name in images:
 		file_name = os.path.join(frames, file_name)
 
 		if file_is_image(file_name):
 			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count)
+			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count, subtract_skyglow)
 			if save_intermediate == 1:
 				save_intermediate_frame(image, image_count, save_directory)
 
@@ -200,11 +216,12 @@ register(
 		(PF_TOGGLE, "save_intermediate","Save intermediate frames",0),
 		(PF_DIRNAME, "save_directory","Intermediate save directory",""),
 		(PF_TOGGLE, "live_display","Live display update (much slower)",0),
-		(PF_TOGGLE, "merge_layers","Merge all images to a single layer",1)
+		(PF_TOGGLE, "merge_layers","Merge all images to a single layer",1),
+		(PF_TOGGLE, "subtract_skyglow","Automatically remove skyglow (much slower)",0)
 	],
 	[],
 	startrail,
-	menu="<Image>/File/Create/Python-Fu",
+	menu="<Image>/File/Create",
 	domain=("gimp20-template", locale_directory)
 	)
 
