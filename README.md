@@ -6,9 +6,13 @@ This plugin requires Python to work. On Linux and OSX this will be preinstalled 
 
 To install the plugin, copy the file `startrail.py` into a plugin folder of your choice. You can either place it in the default locations (see [below](#default-plugin-folders)), or my preference, by adding a plugin folder in my home directory to the plugins.
 
-This last option can be done by going to Preferences :arrow_right: Folders :arrow_right: Plug-Ins.  Here you can add a new folder by clicking the new button (:page_facing_up:) and then navigating to the folder.  <a id="default-plugin-folders"/>You will also be able to see the default locations used on this dialog.
+This last option can be done by going to Preferences :arrow_right: Folders :arrow_right: Plug-Ins.  Here you can add a new folder by clicking the new button (:page_facing_up:) and then navigating to the folder.  You will also be able to see the default locations used on this dialog.
 
 Once done reload GIMP to have the changes take effect.
+
+_The startrail.py script requires execute permissions for it to work.  If the plugin isn't working for you then check this first._
+
+_On linux and macs this can be done by running `chmod +x startrail.py` from the plugins folder._
 
 # Usage
 
