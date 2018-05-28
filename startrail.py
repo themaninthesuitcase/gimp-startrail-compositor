@@ -120,7 +120,7 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count,
 			glow_layer.opacity = 100.0
 		# add this as new layer
 		light_frame.add_layer(glow_layer,0)
-		pdb.plug_in_gauss(light_frame, glow_layer, 150, 150, 0)
+		pdb.plug_in_gauss(light_frame, glow_layer, 500, 500, 0)
 		light_frame.flatten()
 
 	# Set the light frame to layer_mode_lighten
