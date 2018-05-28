@@ -93,6 +93,7 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count,
 	if image == None:
 		# create a base image based on the light frame
 		image = get_new_image(light_frame)
+		image.disable_undo()
 
 	# did we make a dark frame?
 	if dark_image != None:
@@ -191,6 +192,7 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		pdb.gimp_message("No images found to stack")
 
 	if image != None:
+		image.enable_undo()
 		if live_display == 1 :
 			gimp.displays_flush()
 		else:
