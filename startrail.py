@@ -85,7 +85,7 @@ def save_intermediate_frame(image, image_count, directory):
 	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
 	pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
 
-def process_light_frame(file_name, image, dark_image, merge_layers, image_count, subtract_skyglow):
+def process_light_frame(file_name, image, dark_image, merge_layers, image_count, subtract_skyglow, opacity):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
@@ -126,6 +126,7 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count,
 	# Set the light frame to layer_mode_lighten
 	light_layer = pdb.gimp_layer_new_from_drawable(light_frame.active_layer, image)
 	light_layer.mode = LIGHTEN_ONLY_MODE
+	light_layer.opacity = opacity
 
 	# add this as new layer
 	image.add_layer(light_layer,0)
@@ -139,7 +140,7 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count,
 	gimp.delete(light_frame)
 	return(image)
 
-def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers, subtract_skyglow):
+def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers, subtract_skyglow, fade):
 	#Do some santity checking before we start
 	# Light frames
 	if len(frames) == 0:
@@ -171,6 +172,8 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	# Create a counter to count the frames we layer
 	image_count = 0
 
+	opacity = 100.0
+
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
@@ -180,8 +183,12 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		file_name = os.path.join(frames, file_name)
 
 		if file_is_image(file_name):
+			if fade == 1: # Fade in
+				opacity = (image_count * 100.0 / len(images))
+                        elif fade == 2: # Fade out
+				opacity = 100.0 - (image_count * 100.0 / len(images))
 			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count, subtract_skyglow)
+			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count, subtract_skyglow, opacity)
 			if save_intermediate == 1:
 				save_intermediate_frame(image, image_count, save_directory)
 
@@ -227,7 +234,8 @@ register(
 		(PF_DIRNAME, "save_directory","Intermediate save directory",""),
 		(PF_TOGGLE, "live_display","Live display update (much slower)",0),
 		(PF_TOGGLE, "merge_layers","Merge all images to a single layer",1),
-		(PF_OPTION, "subtract_skyglow","Subtract skyglow (much slower)",0, ["None", "Light", "Moderate", "Heavy", "Full"])
+		(PF_OPTION, "subtract_skyglow","Subtract skyglow (much slower)",0, ["None", "Light", "Moderate", "Heavy", "Full"]),
+		(PF_OPTION, "fade", "Fade trails", 0, ["None", "In", "Out"])
 	],
 	[],
 	startrail,
