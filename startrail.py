@@ -23,7 +23,6 @@
 
 import os
 from gimpfu import *
-from time import time
 
 import gettext
 locale_directory = gimp.locale_directory
@@ -161,9 +160,6 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 		pdb.gimp_message("Intermediate frame save path doesn't exist.")
 		return
 
-	# start a timer
-	start = time()
-
 	# create 1 dark frame averaged from all of them
 	dark_image = None
 	if use_dark_frames == 1:
@@ -199,9 +195,6 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 				# Update the display
 				gimp.displays_flush()
 
-	# end the timer
-	elapsed = time() - start
-
 	# show the new image if we managed to make one.
 	if image == None:
 		pdb.gimp_message("No images found to stack")
@@ -212,7 +205,6 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 			gimp.displays_flush()
 		else:
 			gimp.Display(image)
-		pdb.gimp_message("Image created in " + str(round(elapsed)).rstrip('0').rstrip('.') + "s")
 
 	if dark_image != None:
 		gimp.delete(dark_image) # we don't need this any more so get rid of it so not to leak.
