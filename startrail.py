@@ -165,32 +165,26 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	if use_dark_frames == 1:
 		dark_image = create_dark_image(dark_frames)
 
-	# Create a counter to count the frames we layer
-	image_count = 0
-
-	opacity = 100.0
-
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
 	images = os.listdir(frames)
 	images.sort()
-	for file_name in images:
+	# reversing the list is necessary in order to be able to use the same opacity formula
+	if fade == 1: # Fade in
+		images.reverse()
+	for image_count, file_name in enumerate(images):
 		file_name = os.path.join(frames, file_name)
 
 		if file_is_image(file_name):
-			if fade == 1: # Fade in
-				opacity = (image_count * 100.0 / len(images))
-                        elif fade == 2: # Fade out
-				opacity = 100.0 - (image_count * 100.0 / len(images))
-			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count, subtract_skyglow, opacity)
+			opacity = 100.0 - (image_count * 100.0 / len(images))
+			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count + 1, subtract_skyglow, opacity)
 			if save_intermediate == 1:
-				save_intermediate_frame(image, image_count, save_directory)
+				save_intermediate_frame(image, image_count + 1, save_directory)
 
 			if live_display == 1:
 				# If first frame display the image to screen.
-				if image_count == 1:
+				if image_count + 1 == 1:
 					gimp.Display(image)
 				# Update the display
 				gimp.displays_flush()
