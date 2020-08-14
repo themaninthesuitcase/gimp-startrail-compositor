@@ -38,12 +38,32 @@ def file_is_image(file_name):
 		is_image = 1
 	return(is_image)
 
-def get_new_image(raw_image):
-        if hasattr(gimp.Image, "precision"):
-	        return pdb.gimp_image_new_with_precision(raw_image.active_layer.width, raw_image.active_layer.height, 0,
-						         raw_image.precision)
-        else:
-	        return pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
+def get_new_image(raw_image, fade=None):
+	image = None
+	if hasattr(gimp.Image, "precision"):
+		image = pdb.gimp_image_new_with_precision(raw_image.active_layer.width, raw_image.active_layer.height, 0,
+					raw_image.precision)
+	else:
+		image = pdb.gimp_image_new(raw_image.active_layer.width, raw_image.active_layer.height, 0)
+
+	# When using "fade in and out" we need to add a black layer to the image:
+	# this will ensure the light frames (with opacity < 100) will be stacked on
+	# a dark background.
+	if fade != None and fade == 3: # fade in and out
+		layer = pdb.gimp_layer_new(
+					image,
+					raw_image.active_layer.width,
+					raw_image.active_layer.height,
+					RGB_IMAGE,
+					"layer_black",
+					100,
+					LAYER_MODE_NORMAL
+		)
+
+		image.add_layer(layer, 1)
+		pdb.gimp_drawable_fill(layer, FILL_WHITE)
+		pdb.gimp_drawable_invert(layer, 0)
+	return image
 
 def process_dark_frame(file_name, image, layer_count):
 	dark_frame = pdb.gimp_file_load(file_name,"")
@@ -84,14 +104,14 @@ def save_intermediate_frame(image, image_count, directory):
 	intermediate_save_file_name = os.path.join(directory, "trail" + str(image_count).zfill(5) + ".jpg")
 	pdb.gimp_file_save(image,pdb.gimp_image_get_active_drawable(image),intermediate_save_file_name,intermediate_save_file_name)
 
-def process_light_frame(file_name, image, dark_image, merge_layers, image_count, subtract_skyglow, opacity):
+def process_light_frame(file_name, image, dark_image, merge_layers, image_count, subtract_skyglow, opacity, fade):
 	# load up the light frame into an image
 	light_frame = pdb.gimp_file_load(file_name,"")
 
 	# have we got a base image to work with?
 	if image == None:
 		# create a base image based on the light frame
-		image = get_new_image(light_frame)
+		image = get_new_image(light_frame, fade)
 		image.disable_undo()
 
 	# did we make a dark frame?
@@ -139,7 +159,46 @@ def process_light_frame(file_name, image, dark_image, merge_layers, image_count,
 	gimp.delete(light_frame)
 	return(image)
 
-def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers, subtract_skyglow, fade):
+def compute_opacities(fade, fade_in_amount, fade_out_amount, n_images):
+	opacities = []
+	image_indexes = list(range(n_images))
+
+	if fade == 1:
+		opacities, _ = opacities_from_fade_amount(fade_in_amount, n_images)
+	elif fade == 2:
+		opacities, _ = opacities_from_fade_amount(fade_out_amount, n_images)
+	elif fade == 3:
+		# to avoid jumps between fade_in and fade_out:
+		# 1. chose a parameter to control the other: fade_out_amount controls fade_in_amount
+		# 2. requires fade_in_amount + fade_out_amount <= 100
+		# "less than" means that there may be a certain amount of trail where opacity = 100
+		if fade_in_amount + fade_out_amount > 100:
+			fade_in_amount = 100 - fade_out_amount
+
+		opacities_in, N_in = opacities_from_fade_amount(fade_in_amount, n_images)
+		opacities_out, N_out = opacities_from_fade_amount(fade_out_amount, n_images)
+		# the stack is setup to use the fade out formula: we need to reverse the opacities to get the fade in
+		opacities_in.reverse()
+		opacities = [opacities_in[i] if i < (n_images - N_out) else opacities_out[i] for i in image_indexes]
+	else:
+		opacities = [100.0 for i in image_indexes]
+
+	return opacities
+
+def opacities_from_fade_amount(fade_amount, n_images):
+	opacities = []
+	image_indexes = list(range(n_images))
+	N = int(fade_amount * n_images / 100.0)
+
+	if N == n_images:
+		opacities = [100.0 - (i * 100.0 / N) for i in image_indexes]
+	else:
+		opacities = [100.0 if i < (n_images - N - 1) else 100.0 - ((i - (n_images - N - 1)) * 100.0 / (N + 1)) for i in image_indexes]
+
+	return opacities, N
+
+
+def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_directory, live_display, merge_layers, subtract_skyglow, fade, fade_in_amount, fade_out_amount):
 	#Do some santity checking before we start
 	# Light frames
 	if len(frames) == 0:
@@ -165,32 +224,30 @@ def startrail(frames, use_dark_frames, dark_frames, save_intermediate, save_dire
 	if use_dark_frames == 1:
 		dark_image = create_dark_image(dark_frames)
 
-	# Create a counter to count the frames we layer
-	image_count = 0
-
-	opacity = 100.0
-
 	# Define an image to work in.
 	# This will be created from the first light frame we process
 	image = None
 	images = os.listdir(frames)
 	images.sort()
-	for file_name in images:
+
+	# reversing the list is necessary in order to be able to use the same opacity formula
+	if fade == 1: # Fade in
+		images.reverse()
+
+	# compute the opacity values based on the selected fade options
+	opacities = compute_opacities(fade, fade_in_amount, fade_out_amount, len(images))
+
+	for image_count, file_name in enumerate(images):
 		file_name = os.path.join(frames, file_name)
 
 		if file_is_image(file_name):
-			if fade == 1: # Fade in
-				opacity = (image_count * 100.0 / len(images))
-                        elif fade == 2: # Fade out
-				opacity = 100.0 - (image_count * 100.0 / len(images))
-			image_count += 1
-			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count, subtract_skyglow, opacity)
+			image = process_light_frame(file_name, image, dark_image, merge_layers,image_count + 1, subtract_skyglow, opacities[image_count], fade)
 			if save_intermediate == 1:
-				save_intermediate_frame(image, image_count, save_directory)
+				save_intermediate_frame(image, image_count + 1, save_directory)
 
 			if live_display == 1:
 				# If first frame display the image to screen.
-				if image_count == 1:
+				if image_count + 1 == 1:
 					gimp.Display(image)
 				# Update the display
 				gimp.displays_flush()
@@ -227,7 +284,9 @@ register(
 		(PF_TOGGLE, "live_display","Live display update (much slower)",0),
 		(PF_TOGGLE, "merge_layers","Merge all images to a single layer",1),
 		(PF_OPTION, "subtract_skyglow","Subtract skyglow (much slower)",0, ["None", "Light", "Moderate", "Heavy", "Full"]),
-		(PF_OPTION, "fade", "Fade trails", 0, ["None", "In", "Out"])
+		(PF_OPTION, "fade", "Fade trails", 0, ["None", "In", "Out", "In and Out"]),
+		(PF_SPINNER, "fade_in_amount", "Fade In amount [%]", 100, (1, 100, 1)),
+		(PF_SPINNER, "fade_out_amount", "Fade Out amount [%]", 100, (1, 100, 1))
 	],
 	[],
 	startrail,
